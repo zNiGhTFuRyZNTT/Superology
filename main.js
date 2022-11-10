@@ -30,11 +30,7 @@ const getDir = (dir) => {
     })
 
 }
-function sendChannelJoinErr() {
-    const message = `ناموسا برای حمایت از ما و استفاده از ربات لطفا اول تو کانالمون عضو شو 🙂🌹\n 😹 @nemesisdevteam 🍑`
-    bot.sendMessage(msg.from.id, message).catch(err => console.log(err))
-    return
-}
+
 var videos = {  }
 categories.forEach(async category => {
     const files = await getDir(`./videos/${category}/`)
@@ -44,9 +40,10 @@ categories.forEach(async category => {
 
 // < --- End --- >
 
-// process.on('unhandledRejection', error => {
-//     // pass
-// });
+process.on('unhandledRejection', error => {
+    console.log(error)
+    // pass
+});
 
 bot.on(['/start', '/hello'], (msg) => msg.reply.text('Salam Eshgham').catch(console.log))
 
@@ -102,13 +99,19 @@ bot.on(/\/toggleBlackList(.*)/, async (msg, match) => {
 
 })
 
-categories.forEach(async category => {
-    bot.on(`/${category}`, async (msg) => {
+async function main(msg, category, previous_message=null) {
+        if (previous_message)
+            bot.deleteMessage(msg.chat.id, previous_message.message_id).catch(console.log)
         // <-- pre-checks -->
         const is_banned = await isBanned(msg.from.id)
         if (is_banned) return
         console.log(category)
         // console.log(videos)
+        function sendChannelJoinErr() {
+            const message = `ناموسا برای حمایت از ما و استفاده از ربات لطفا اول تو کانالمون عضو شو 🙂🌹\n 😹 @nemesisdevteam 🍑`
+            bot.sendMessage(msg.from.id, message).catch(err => console.log(err))
+            return
+        }
         const memebership = await bot.getChatMember(-1001404127129, msg.from.id)
         if (!["member", "administrator", "creator"].includes(memebership.status)){
             sendChannelJoinErr()
@@ -126,6 +129,7 @@ categories.forEach(async category => {
         const firstname = msg.from.first_name
         const lastname = !msg.from.last_name ? null : msg.from.last_name
         // < --- End --- >
+        const waitMsg = await bot.sendMessage(chatID, "[🔞] Thinking ...").catch(console.log)
         addUser(username, firstname, lastname, userID, chatID)
             .then(() => {
                 updateAll(userID)
@@ -139,15 +143,35 @@ categories.forEach(async category => {
         const filename = videos[category][videoNum]
         const filepath = path.join(__dirname, `videos/${category}/${filename}`)
         console.log(videoNum, filepath)
+
+        // Timeout Error Handle
+        const dl_timeout = setTimeout(() => {
+            status[msg.from.id] = false
+            bot.editMessageText({ chatId: chatID, messageId: waitMsg.message_id }, `[❗] Failed retrying ...`)
+                .then(() => {
+                    send_log(bot, `10 Sec Err for user-> id: ${msg.from.id} username: @${username} firstname: ${firstname} lastname: ${lastname}`)
+                    main(msg, category, waitMsg)
+                })
+                .catch(console.log)
+        }, 7000)
+        // < -- End -- >
+        // < -- Send Video -- > 
         bot.sendVideo(msg.from.id, filepath, {caption: "🍑@superology_bot🤤"})
             .then(() => {
+                clearTimeout(dl_timeout)
+                bot.deleteMessage(msg.from.id, waitMsg.message_id).catch(console.log)
                 count.success++
                 status[msg.from.id] = false
                 updateSuccess(userID)
                     .catch((e) => send_log(bot, `UserID: ${userID}\nQuery: ${msg.text}\n${JSON.stringify(e)}`))
             })
             .catch(err => send_log(bot, `UserID: ${userID}\nQuery: ${msg.text}\n${JSON.stringify(e)}`))
+        // < -- End -- >
+}
 
+categories.forEach(async category => {
+    bot.on(`/${category}`, async (msg) => {
+        main(msg, category)
     })
 
 })
