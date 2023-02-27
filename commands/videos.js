@@ -27,7 +27,7 @@ categories.forEach(async category => {
 })
 
 // some required functions
-const sendChannelJoinErr = (bot) => {
+const sendChannelJoinErr = (bot, msg) => {
     const message = `ناموسا برای حمایت از ما و استفاده از ربات لطفا اول تو کانالمون عضو شو 🙂🌹\n 😹 @nemesisdevteam 🍑`
     bot.sendMessage(msg.from.id, message).catch(err => console.log(err))
     return
@@ -61,7 +61,7 @@ module.exports = {
 
         const memebership = await bot.getChatMember(mainChannelId, msg.from.id)
         if (!["member", "administrator", "creator"].includes(memebership.status)){
-            sendChannelJoinErr(bot)
+            sendChannelJoinErr(bot, msg)
             return
         }
 
