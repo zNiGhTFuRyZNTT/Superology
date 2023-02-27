@@ -81,6 +81,7 @@ module.exports = {
                     if (queryInProgress["retries"] > 3) {
                         return msg.reply.text("[❌] An Error has occured, please contact the bot admin.")
                     }
+                    queryInProgress[msg.from.id] = false
                     queryInProgress["retries"]++
                     execute(bot, msg, null, SelectedCategory, waitMsg)
                 })
@@ -95,11 +96,11 @@ module.exports = {
 
         bot.sendVideo(msg.from.id, filepath, {caption: "🍑@superology_bot🤤"})
             .then(async () => {
+                queryInProgress[msg.from.id] = false
                 clearTimeout(dl_timeout)
                 bot.deleteMessage(msg.from.id, waitMsg.message_id).catch(console.log)
                 bot.successfulVideoQueries++
                 await updateAllsuccessfulVideoQueries(userID)
-                queryInProgress[msg.from.id] = false
                 updateAllSentQueries(userID)
                     .catch((e) => sendLog(bot, `UserID: ${userID}\nQuery: ${msg.text}\n${JSON.stringify(e)}`))
             })
