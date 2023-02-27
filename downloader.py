@@ -56,10 +56,10 @@ if __name__ == '__main__':
     # app.init_download()
     
     #< -- full Download -- >
-    files = listFiles('urls')
+    files = listFiles('assets/urls')
     for file in files:
         print(file)
-        print(f"videos/{file.split('.')[0]}")
-        app = Program(f"urls/{file}", f"videos/{file.split('.')[0]}")
+        print(f"assets/videos/{file.split('.')[0]}")
+        app = Program(f"assets/urls/{file}", f"assets/videos/{file.split('.')[0]}")
         app._extract_urls()
         app.init_download()
